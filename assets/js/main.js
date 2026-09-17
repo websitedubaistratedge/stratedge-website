@@ -756,10 +756,19 @@
   --------------------------------------------------------------- */
   function chrome() {
     $$('[data-year]').forEach(function (el) { el.textContent = new Date().getFullYear(); });
-    var here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    // Cloudflare serves /about where GitHub Pages served /about.html, so compare
+    // page names with the extension stripped. Service subpages count as Services.
+    function page(p) {
+      p = (p || '').split('#')[0].split('?')[0];
+      if (/(^|\/)services\/[^/]+\/(index(\.html)?)?$/.test(p)) return 'services';
+      p = p.split('/').pop().replace(/\.html$/, '').toLowerCase();
+      return p === '' ? 'index' : p;
+    }
+    var here = page(location.pathname);
     $$('.nav__link, .menu__item a').forEach(function (a) {
-      var href = (a.getAttribute('href') || '').toLowerCase();
-      if (href === here || (here === '' && href === 'index.html')) a.setAttribute('aria-current', 'page');
+      var href = (a.getAttribute('href') || '').split('#')[0];
+      if (!href || /\/$/.test(href)) return;   // links into a service subpage are never the current nav item
+      if (page(href) === here) a.setAttribute('aria-current', 'page');
     });
   }
 
